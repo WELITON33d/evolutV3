@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, shouldMock } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { 
   isValidEmail, 
   isStrongPassword, 
@@ -35,38 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (shouldMock) {
-      // Mock User initialization is handled in signIn for consistency, 
-      // but if we want auto-login for demo, we can keep it here or just check localStorage
-      // For now, let's allow "not logged in" state even in mock mode, 
-      // but maybe pre-fill or allow easy login.
-      // Actually, previous implementation forced login in mock mode immediately.
-      // Let's check if we want that. 
-      // The user wants a login page. So in mock mode, we should start unauthenticated 
-      // and allow "login" with any credentials.
-      
-      // However, the previous code I saw setSession immediately in useEffect.
-      // If I want a login page, I should NOT setSession immediately in mock mode 
-      // UNLESS I want to bypass login.
-      // User asked for "create login page". So they want to see it.
-      // I will remove the auto-login in mock mode from useEffect, 
-      // and instead let signIn handle it.
-      
-      // But wait, if I remove auto-login, the user might be confused if they were already "using" it.
-      // The previous context showed the user was using "white screen" fix which enabled demo mode.
-      // If I change it now, they will be logged out. That's fine.
-      
-      // Let's check localStorage for "mock-session" to persist login in mock mode?
-      const stored = localStorage.getItem('mock-session');
-      if (stored) {
-         const mockSession = JSON.parse(stored);
-         setSession(mockSession);
-         setUser(mockSession.user);
-      }
-      setLoading(false);
-      return;
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -100,58 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: { message: 'Formato de email inválido.' } };
     }
 
-    if (shouldMock) {
-      // 3. Find User (Mock)
-      const storedUsers = JSON.parse(localStorage.getItem('mock_users_db') || '{}');
-      const userRecord = storedUsers[email];
-
-      if (!userRecord) {
-        // Delay to prevent timing attacks (simulated)
-        await new Promise(r => setTimeout(r, 500)); 
-        recordFailedAttempt(email);
-        logSecurityEvent('LOGIN_FAIL', `User not found: ${email}`);
-        return { error: { message: 'Credenciais inválidas.' } };
-      }
-
-      // 4. Verify Password (Mock)
-      const inputHash = await hashPassword(password);
-      if (inputHash !== userRecord.passwordHash) {
-        await new Promise(r => setTimeout(r, 500));
-        recordFailedAttempt(email);
-        logSecurityEvent('LOGIN_FAIL', `Invalid password for: ${email}`);
-        return { error: { message: 'Credenciais inválidas.' } };
-      }
-
-      // 5. Success (Mock)
-      clearAttempts(email);
-      logSecurityEvent('LOGIN_SUCCESS', `User logged in: ${email}`);
-
-      const mockUser: User = {
-        id: userRecord.id,
-        app_metadata: {},
-        user_metadata: {},
-        aud: 'authenticated',
-        created_at: userRecord.createdAt,
-        email: email,
-        phone: '',
-        role: 'authenticated',
-        updated_at: new Date().toISOString()
-      };
-      
-      const mockSession: Session = {
-        access_token: 'mock-token',
-        refresh_token: 'mock-refresh-token',
-        expires_in: 3600,
-        token_type: 'bearer',
-        user: mockUser
-      };
-
-      setSession(mockSession);
-      setUser(mockUser);
-      localStorage.setItem('mock-session', JSON.stringify(mockSession));
-      return { error: null };
-    }
-    
     // Real Supabase Auth
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -179,42 +95,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: { message: strength.message } };
     }
 
-    if (shouldMock) {
-      // 2. Check Exists (Mock)
-      const storedUsers = JSON.parse(localStorage.getItem('mock_users_db') || '{}');
-      if (storedUsers[email]) {
-        return { error: { message: 'Este email já está cadastrado.' } };
-      }
-
-      // 3. Create User (Mock)
-      const passwordHash = await hashPassword(password);
-      const newUser = {
-        id: crypto.randomUUID(),
-        email,
-        passwordHash,
-        createdAt: new Date().toISOString()
-      };
-
-      storedUsers[email] = newUser;
-      localStorage.setItem('mock_users_db', JSON.stringify(storedUsers));
-      
-      logSecurityEvent('SIGNUP', `New user registered: ${email}`);
-
-      // Auto login
-      return signIn(email, password);
-    }
-
     // Real Supabase Auth
     return await supabase.auth.signUp({ email, password });
   };
 
   const signOut = async () => {
-    if (shouldMock) {
-      setSession(null);
-      setUser(null);
-      localStorage.removeItem('mock-session');
-      return;
-    }
     await supabase.auth.signOut();
   };
 

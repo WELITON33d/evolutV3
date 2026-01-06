@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, shouldMock } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { Project, Block, Reminder, BlockType, ProjectStatus } from '../types';
 import { useToast } from '../components/Toast';
@@ -27,9 +27,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchProjects = async () => {
     if (!user) return;
     
-    // In Mock Mode, we load from localStorage via useEffect, so skip API call
-    if (shouldMock) return;
-
     setLoading(true);
     try {
       // Fetch projects
@@ -85,46 +82,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user]);
 
-  // Load from LocalStorage in Mock Mode
-  useEffect(() => {
-    if (shouldMock && user) {
-      const stored = localStorage.getItem(`mock_projects_${user.email}`);
-      if (stored) {
-        setProjects(JSON.parse(stored));
-      }
-    }
-  }, [user]);
-
-  // Save to LocalStorage in Mock Mode
-  useEffect(() => {
-    if (shouldMock && user && projects.length > 0) {
-      localStorage.setItem(`mock_projects_${user.email}`, JSON.stringify(projects));
-    }
-  }, [projects, user]);
-
   const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'blocks' | 'status' | 'progress'>) => {
     if (!user) return null;
     try {
-      if (shouldMock) {
-        const newProject: Project = {
-          id: crypto.randomUUID(),
-          user_id: user.id,
-          name: project.name,
-          type: project.type,
-          description: project.description,
-          strategicFields: project.strategicFields,
-          tags: project.tags,
-          status: ProjectStatus.NOT_STARTED,
-          progress: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          blocks: []
-        };
-        
-        setProjects(prev => [newProject, ...prev]);
-        return newProject.id;
-      }
-
       const newProject = {
         user_id: user.id,
         name: project.name,
@@ -170,8 +130,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
       ));
 
-      if (shouldMock) return;
-
       const dbUpdates: any = {};
       if (updates.name) dbUpdates.name = updates.name;
       if (updates.type) dbUpdates.type = updates.type;
@@ -197,8 +155,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteProject = async (id: string) => {
     // Optimistic update
     setProjects(prev => prev.filter(p => p.id !== id));
-
-    if (shouldMock) return;
 
     try {
 
@@ -273,14 +229,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error adding block:', error);
       addToast('Erro ao adicionar bloco', 'error');
       // Revert optimistic update
-      if (!shouldMock) {
-        setProjects(prev => prev.map(p => 
-          p.id === projectId ? {
-            ...p,
-            blocks: p.blocks.filter(b => b.id !== tempId)
-          } : p
-        ));
-      }
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? {
+          ...p,
+          blocks: p.blocks.filter(b => b.id !== tempId)
+        } : p
+      ));
     }
   };
 
@@ -320,8 +274,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         blocks: p.blocks.filter(b => b.id !== blockId)
       } : p
     ));
-
-    if (shouldMock) return;
 
     try {
 

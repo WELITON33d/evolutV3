@@ -16,11 +16,15 @@ if (!isConfigured) {
 }
 
 // Mock mode is active if not configured
-export const shouldMock = !isConfigured;
+export const shouldMock = false;
 
-// Create Supabase client with fallback
-const url = isConfigured ? supabaseUrl : 'https://placeholder.supabase.co';
-const key = isConfigured ? supabaseAnonKey : 'placeholder';
+// Create Supabase client
+const url = isConfigured ? supabaseUrl : '';
+const key = isConfigured ? supabaseAnonKey : '';
+
+if (!isConfigured) {
+  console.error('Supabase not configured. Application will not function correctly.');
+}
 
 export const supabase = createClient(url, key);
 export const isSupabaseConfigured = isConfigured;

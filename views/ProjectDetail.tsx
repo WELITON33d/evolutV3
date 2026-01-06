@@ -23,6 +23,15 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+const PROJECT_PHASES = [
+  { label: 'Estudo de Ideia', value: 10 },
+  { label: 'Planejamento', value: 25 },
+  { label: 'Criação/Design', value: 50 },
+  { label: 'Desenvolvimento', value: 75 },
+  { label: 'Lançamento', value: 90 },
+  { label: 'Concluído', value: 100 },
+];
+
 const BlockRenderer: React.FC<{ 
   block: Block, 
   onDelete: (id: string) => void, 
@@ -384,17 +393,38 @@ const ProjectDetail: React.FC = () => {
                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                  {project.blocks.length} módulos ativos
                </p>
-               <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Progresso: {project.progress}%</span>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    step="5"
-                    value={project.progress} 
-                    onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
-                    className="w-24 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                  />
+               
+               <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Fase do Projeto</span>
+                    <select 
+                      className="bg-transparent text-[11px] font-bold text-slate-900 focus:outline-none cursor-pointer uppercase tracking-wide"
+                      value={PROJECT_PHASES.find(p => p.value >= project.progress)?.value || 10}
+                      onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
+                    >
+                      {PROJECT_PHASES.map(phase => (
+                        <option key={phase.value} value={phase.value}>{phase.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="h-8 w-px bg-slate-200 mx-2"></div>
+
+                  <div className="flex flex-col gap-1 w-32">
+                     <div className="flex justify-between">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Progresso</span>
+                       <span className="text-[9px] font-black text-blue-600">{project.progress}%</span>
+                     </div>
+                     <input 
+                       type="range" 
+                       min="0" 
+                       max="100" 
+                       step="5"
+                       value={project.progress} 
+                       onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
+                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                     />
+                  </div>
                </div>
             </div>
           </div>

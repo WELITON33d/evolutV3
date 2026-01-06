@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, Kanban } from 'lucide-react';
+import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, Kanban, LogOut } from 'lucide-react';
 import { Logo } from './components/Logo';
 import Dashboard from './views/Dashboard';
 import ProjectDetail from './views/ProjectDetail';
@@ -10,6 +10,7 @@ import RemindersView from './views/RemindersView';
 import CRMBoard from './views/CRMBoard';
 import Login from './views/Login';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { useAuth } from './contexts/AuthContext';
 
 const SidebarLink = ({ to, icon: Icon, label, active }: { to: string, icon: any, label: string, active?: boolean }) => (
   <Link
@@ -25,6 +26,7 @@ const SidebarLink = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 
 const App: React.FC = () => {
   const location = useLocation();
+  const { signOut } = useAuth();
 
   if (location.pathname === '/login') {
     return (
@@ -53,10 +55,17 @@ const App: React.FC = () => {
           <SidebarLink to="/new" icon={PlusCircle} label="Novo Projeto" active={location.pathname === '/new'} />
         </nav>
 
-        <div className="p-4 border-t border-slate-100">
+        <div className="p-4 border-t border-slate-100 space-y-1">
           <button className="flex items-center gap-3 w-full px-3 py-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
             <Settings size={20} />
             <span className="text-sm">Configurações</span>
+          </button>
+          <button 
+            onClick={() => signOut()}
+            className="flex items-center gap-3 w-full px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <LogOut size={20} />
+            <span className="text-sm">Sair</span>
           </button>
         </div>
       </aside>

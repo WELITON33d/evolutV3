@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, Kanban, LogOut, MessageSquare } from 'lucide-react';
+import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, ChevronLeft, Kanban, LogOut, MessageSquare } from 'lucide-react';
 import { Logo } from './components/Logo';
 import Dashboard from './views/Dashboard';
 import Chat from './views/Chat';
@@ -28,6 +28,15 @@ const SidebarLink = ({ to, icon: Icon, label, active }: { to: string, icon: any,
 const App: React.FC = () => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    if (location.pathname === '/chat') {
+      setIsSidebarOpen(false);
+    } else {
+      setIsSidebarOpen(true);
+    }
+  }, [location.pathname]);
 
   if (location.pathname === '/login') {
     return (
@@ -38,9 +47,23 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#f8fafc] text-slate-900 overflow-hidden">
+    <div className="flex h-screen w-full bg-[#f8fafc] text-slate-900 overflow-hidden relative">
+      {/* Sidebar Toggle */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className={`absolute top-6 z-50 p-2 bg-white border border-slate-200 rounded-full shadow-lg text-slate-500 hover:text-slate-900 transition-all duration-300 ${
+          isSidebarOpen ? 'left-[240px]' : 'left-4'
+        }`}
+      >
+        {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+      </button>
+
       {/* Sidebar */}
-      <aside className="w-64 border-right border-slate-200 bg-white flex flex-col h-full">
+      <aside 
+        className={`${
+          isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 -translate-x-full opacity-0'
+        } border-r border-slate-200 bg-white flex flex-col h-full transition-all duration-300 overflow-hidden`}
+      >
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2">
             <Logo />

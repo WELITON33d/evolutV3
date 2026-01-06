@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, Kanban, LogOut } from 'lucide-react';
+import { Layout, Home as HomeIcon, PlusCircle, Bell, Search, Settings, ChevronRight, Kanban, LogOut, MessageSquare } from 'lucide-react';
 import { Logo } from './components/Logo';
 import Dashboard from './views/Dashboard';
+import Chat from './views/Chat';
 import ProjectDetail from './views/ProjectDetail';
 import CreateProject from './views/CreateProject';
 import RemindersView from './views/RemindersView';
@@ -47,6 +48,7 @@ const App: React.FC = () => {
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
+          <SidebarLink to="/chat" icon={MessageSquare} label="Chat IA" active={location.pathname === '/chat'} />
           <SidebarLink to="/" icon={HomeIcon} label="Dashboard" active={location.pathname === '/'} />
           <SidebarLink to="/crm" icon={Kanban} label="CRM de Projetos" active={location.pathname === '/crm'} />
           <div className="pt-4 pb-2">
@@ -73,6 +75,11 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-auto notion-scroll relative">
         <Routes>
+          <Route path="/chat" element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          } />
           <Route path="/" element={
             <ProtectedRoute>
               <Dashboard />

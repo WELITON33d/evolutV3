@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect, useRef } from "react";
 import { Mic, Paperclip, Send, Square } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useSpeechRecognition } from "../../hooks/useSpeechRecognition";
 
 const PLACEHOLDERS = [
   "Gerar site com HextaUI",
@@ -29,6 +30,24 @@ const AIChatInput = ({ onSend, loading, onStop, toolbar }: AIChatInputProps) => 
   const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Speech Recognition
+  const { isListening, transcript, toggleListening } = useSpeechRecognition();
+  const [valueBeforeSpeech, setValueBeforeSpeech] = useState("");
+
+  useEffect(() => {
+    if (isListening && transcript) {
+      setInputValue((valueBeforeSpeech ? valueBeforeSpeech + " " : "") + transcript);
+    }
+  }, [transcript, isListening, valueBeforeSpeech]);
+
+  const handleMicClick = () => {
+    if (!isListening) {
+      setValueBeforeSpeech(inputValue);
+      setIsActive(true); // Ensure expanded
+    }
+    toggleListening();
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -239,13 +258,14 @@ const AIChatInput = ({ onSend, loading, onStop, toolbar }: AIChatInputProps) => 
             </div>
 
             <button
-              className="p-3 rounded-full hover:bg-gray-100 transition"
-              title="Entrada de voz"
+              className={`p-3 rounded-full transition ${isListening ? 'bg-red-50 text-red-500 animate-pulse' : 'hover:bg-gray-100'}`}
+              title={isListening ? "Parar gravação" : "Entrada de voz"}
               type="button"
               tabIndex={-1}
               disabled={loading}
+              onClick={handleMicClick}
             >
-              <Mic size={20} />
+               {isListening ? <Square size={20} fill="currentColor" /> : <Mic size={20} />}
             </button>
             
             {loading ? (

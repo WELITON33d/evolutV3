@@ -6,7 +6,7 @@ import { useToast } from '../components/Toast';
 import { BlockType, ProjectType, Level, Block } from '../types';
 // Fix: Added missing imports 'Target' and 'Zap' from lucide-react
 import { 
-  ArrowLeft, Plus, Type, Image as ImageIcon, Video as VideoIcon, Link as LinkIcon, 
+  ArrowLeft, ArrowRight, Plus, Type, Image as ImageIcon, Video as VideoIcon, Link as LinkIcon, 
   CheckSquare, Bell, MoreVertical, Trash2, Calendar, 
   History, Search, LayoutGrid, Info, Upload, Download, File as FileIcon, X, Play,
   Target, Zap, Sparkles
@@ -66,32 +66,57 @@ const BlockRenderer: React.FC<{
     }
   };
 
+  const getTypeColor = (type: BlockType) => {
+    switch (type) {
+      case BlockType.IMAGE: return 'text-blue-600 bg-blue-50';
+      case BlockType.VIDEO: return 'text-indigo-600 bg-indigo-50';
+      case BlockType.REMINDER: return 'text-amber-600 bg-amber-50';
+      case BlockType.TODO: return 'text-emerald-600 bg-emerald-50';
+      case BlockType.FILE: return 'text-violet-600 bg-violet-50';
+      case BlockType.LINK: return 'text-sky-600 bg-sky-50';
+      default: return 'text-slate-600 bg-slate-50';
+    }
+  };
+
+  const getTypeIcon = (type: BlockType) => {
+    switch (type) {
+      case BlockType.IMAGE: return <ImageIcon size={14} />;
+      case BlockType.VIDEO: return <VideoIcon size={14} />;
+      case BlockType.REMINDER: return <Bell size={14} />;
+      case BlockType.TODO: return <CheckSquare size={14} />;
+      case BlockType.FILE: return <FileIcon size={14} />;
+      case BlockType.LINK: return <LinkIcon size={14} />;
+      default: return <Type size={14} />;
+    }
+  };
+
   const renderContent = () => {
     switch (block.type) {
       case BlockType.TEXT:
         return (
           <textarea
-            className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 leading-relaxed resize-none notion-scroll p-0 text-base"
-            placeholder="Digite suas ideias ou hipóteses..."
+            className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-slate-700 leading-relaxed resize-none p-0 text-sm min-h-[80px]"
+            placeholder="Escreva aqui..."
             value={block.content}
             onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-            rows={Math.max(1, block.content.split('\n').length)}
+            rows={Math.max(3, block.content.split('\n').length)}
           />
         );
       case BlockType.TODO:
         return (
-          <div className="flex items-start gap-4 w-full">
+          <div className="flex items-start gap-3 w-full">
             <input 
               type="checkbox" 
               checked={!!block.metadata?.completed}
-              className="mt-1 w-5 h-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+              className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
               onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, completed: e.target.checked } })}
             />
-            <input
-              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 p-0 text-base font-medium ${block.metadata?.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
+            <textarea
+              className={`flex-1 bg-transparent border-none focus:outline-none focus:ring-0 p-0 text-sm font-medium resize-none ${block.metadata?.completed ? 'line-through text-slate-400' : 'text-slate-700'}`}
               value={block.content}
               onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              placeholder="Próximo passo do projeto..."
+              placeholder="Tarefa a realizar..."
+              rows={1}
             />
           </div>
         );
@@ -99,31 +124,16 @@ const BlockRenderer: React.FC<{
         return (
           <div className="space-y-3 w-full">
              {block.metadata?.url ? (
-               <div className="relative group/img overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 max-h-[600px] flex items-center justify-center shadow-lg">
-                 <img src={block.metadata.url} alt="Print de Referência" className="max-w-full h-auto object-contain" />
-                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/img:opacity-100 transition-all translate-y-2 group-hover/img:translate-y-0">
-                   <button 
-                    onClick={() => {
-                      if(confirm("Deseja excluir este bloco?")) {
-                        onDelete(block.id);
-                      }
-                    }}
-                    className="bg-white/95 p-2 rounded-xl hover:bg-white shadow-xl text-red-500 hover:scale-110 transition-all border border-slate-100"
-                   >
-                     <Trash2 size={18} />
-                   </button>
-                 </div>
+               <div className="relative group/img overflow-hidden rounded-xl bg-slate-100 border border-slate-200 aspect-video flex items-center justify-center">
+                 <img src={block.metadata.url} alt="Referência" className="w-full h-full object-cover" />
                </div>
              ) : (
                <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 rounded-3xl p-16 text-center hover:bg-slate-50 hover:border-slate-400 transition-all cursor-pointer group bg-slate-50/50"
+                className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:bg-slate-50 hover:border-blue-400 transition-all cursor-pointer group"
                >
-                 <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5 text-slate-400 group-hover:scale-110 group-hover:text-slate-900 shadow-sm transition-all">
-                    <Upload size={24} />
-                 </div>
-                 <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Anexar Print ou Referência</p>
-                 <p className="text-xs text-slate-400 mt-2 font-medium">PNG, JPG ou Prints colados (Upload Local)</p>
+                 <Upload size={20} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                 <span className="text-xs font-bold text-slate-500">Adicionar Imagem</span>
                  <input 
                    ref={fileInputRef}
                    type="file" 
@@ -134,10 +144,10 @@ const BlockRenderer: React.FC<{
                </div>
              )}
              <input
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-400 font-bold italic px-1"
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-xs text-slate-500 font-medium px-1"
               value={block.content}
               onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              placeholder="Legenda da referência..."
+              placeholder="Legenda..."
             />
           </div>
         );
@@ -145,31 +155,16 @@ const BlockRenderer: React.FC<{
         return (
           <div className="space-y-3 w-full">
             {block.metadata?.url ? (
-              <div className="relative group/vid overflow-hidden rounded-2xl bg-black border border-slate-800 shadow-2xl aspect-video flex items-center justify-center">
+              <div className="relative overflow-hidden rounded-xl bg-black aspect-video flex items-center justify-center">
                 <video src={block.metadata.url} controls className="w-full h-full object-contain" />
-                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/vid:opacity-100 transition-all">
-                   <button 
-                    onClick={() => {
-                      if(confirm("Deseja excluir este bloco?")) {
-                        onDelete(block.id);
-                      }
-                    }}
-                    className="bg-white/95 p-2 rounded-xl hover:bg-white shadow-xl text-red-500 hover:scale-110 transition-all"
-                   >
-                     <Trash2 size={18} />
-                   </button>
-                 </div>
               </div>
             ) : (
               <div 
                 onClick={() => videoInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 rounded-3xl p-16 text-center hover:bg-slate-50 hover:border-slate-400 transition-all cursor-pointer group bg-slate-50/50"
+                className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:bg-slate-50 hover:border-indigo-400 transition-all cursor-pointer group"
               >
-                <div className="w-16 h-16 bg-white border border-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5 text-slate-400 group-hover:scale-110 group-hover:text-blue-600 shadow-sm transition-all">
-                   <Play size={24} className="fill-current" />
-                </div>
-                <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Subir Referência em Vídeo</p>
-                <p className="text-xs text-slate-400 mt-2 font-medium">MP4, MOV ou WebM (Max 10MB p/ Storage local)</p>
+                <Play size={20} className="mx-auto mb-2 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                <span className="text-xs font-bold text-slate-500">Adicionar Vídeo</span>
                 <input 
                    ref={videoInputRef}
                    type="file" 
@@ -180,55 +175,42 @@ const BlockRenderer: React.FC<{
               </div>
             )}
             <input
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-400 font-bold italic px-1"
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-xs text-slate-500 font-medium px-1"
               value={block.content}
               onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              placeholder="Notas sobre o vídeo..."
+              placeholder="Descrição do vídeo..."
             />
           </div>
         );
       case BlockType.FILE:
         return (
-          <div className="space-y-2 w-full">
+          <div className="space-y-3 w-full">
             {block.metadata?.url ? (
-              <div className="flex items-center gap-5 p-5 bg-white border border-slate-200 rounded-[1.5rem] group/file hover:border-slate-400 hover:shadow-xl transition-all">
-                <div className="w-14 h-14 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0">
-                  <FileIcon size={24} />
+              <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl group/file hover:border-violet-300 transition-all">
+                <div className="w-10 h-10 bg-white border border-slate-100 rounded-lg flex items-center justify-center shrink-0 text-violet-600">
+                  <FileIcon size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-black text-slate-900 truncate">{block.metadata.fileName}</p>
-                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-0.5">
-                    {(block.metadata.fileSize ? (block.metadata.fileSize / 1024).toFixed(1) : 0)} KB • {block.metadata.fileType?.split('/')[1] || 'DOC'}
+                  <p className="text-sm font-bold text-slate-900 truncate">{block.metadata.fileName}</p>
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                    {(block.metadata.fileSize ? (block.metadata.fileSize / 1024).toFixed(0) : 0)} KB
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <a 
-                    href={block.metadata.url} 
-                    download={block.metadata.fileName}
-                    className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
-                  >
-                    <Download size={22} />
-                  </a>
-                  <button 
-                    onClick={() => onUpdate(block.id, { metadata: { ...block.metadata, url: '' } })}
-                    className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                  >
-                    <Trash2 size={22} />
-                  </button>
-                </div>
+                <a 
+                  href={block.metadata.url} 
+                  download={block.metadata.fileName}
+                  className="p-2 text-slate-400 hover:text-violet-600 hover:bg-white rounded-lg transition-all"
+                >
+                  <Download size={16} />
+                </a>
               </div>
             ) : (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 bg-slate-50/50 rounded-3xl p-10 text-center hover:bg-slate-100 hover:border-slate-400 transition-all cursor-pointer"
+                className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:bg-slate-50 hover:border-violet-400 transition-all cursor-pointer group"
               >
-                <div className="flex flex-col items-center justify-center gap-4 text-slate-500">
-                  <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center">
-                    <Upload size={24} />
-                  </div>
-                  <span className="text-sm font-black uppercase tracking-widest text-slate-900">Documentação Técnica</span>
-                  <span className="text-xs font-medium text-slate-400">Anexe PDFs, Planilhas ou Briefings</span>
-                </div>
+                <Upload size={20} className="mx-auto mb-2 text-slate-400 group-hover:text-violet-500 transition-colors" />
+                <span className="text-xs font-bold text-slate-500">Anexar Arquivo</span>
                 <input 
                    ref={fileInputRef}
                    type="file" 
@@ -242,49 +224,45 @@ const BlockRenderer: React.FC<{
       case BlockType.LINK:
         return (
           <div className="space-y-2 w-full">
-            <div className="flex items-center gap-4 p-5 bg-slate-50 border border-slate-200 rounded-2xl group hover:border-slate-900 transition-all">
-              <LinkIcon size={20} className="text-slate-400 group-hover:text-slate-900 transition-colors" />
+            <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl group hover:border-sky-300 transition-all">
+              <LinkIcon size={16} className="text-slate-400 group-hover:text-sky-500 transition-colors" />
               <input
-                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-base font-bold text-slate-900 p-0"
+                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm font-medium text-slate-900 p-0"
                 value={block.metadata?.url || ''}
                 onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, url: e.target.value } })}
-                placeholder="https://referencia-ou-concorrente.com"
+                placeholder="https://..."
               />
               {block.metadata?.url && (
-                <a href={block.metadata.url} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white border border-slate-100 rounded-xl hover:bg-blue-600 hover:text-white transition-all text-slate-400 shadow-sm">
-                  <Play size={14} className="-rotate-90 fill-current" />
+                <a href={block.metadata.url} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-white border border-slate-100 rounded-lg hover:bg-sky-500 hover:text-white transition-all text-slate-400">
+                  <ArrowRight size={12} className="-rotate-45" />
                 </a>
               )}
             </div>
             <textarea
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-slate-500 font-medium px-1 leading-relaxed mt-2"
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-xs text-slate-500 font-medium px-1 leading-relaxed"
               value={block.content}
               onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              placeholder="O que aprender com este link?"
+              placeholder="Notas sobre o link..."
               rows={1}
             />
           </div>
         );
       case BlockType.REMINDER:
         return (
-          <div className="flex flex-col gap-4 p-6 bg-blue-900 text-white rounded-[2rem] w-full shadow-2xl">
-            <div className="flex items-center gap-2 text-blue-300 font-black text-[10px] uppercase tracking-[0.2em]">
-              <Bell size={14} className="fill-blue-300" />
-              Lembrete Estratégico
-            </div>
+          <div className="flex flex-col gap-3">
             <textarea
-              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-white font-bold text-xl resize-none p-0 leading-tight placeholder:text-blue-300"
+              className="w-full bg-transparent border-none focus:outline-none focus:ring-0 text-slate-900 font-bold text-lg resize-none p-0 leading-tight placeholder:text-slate-300"
               value={block.content}
               onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              placeholder="Algo vital para o sucesso..."
-              rows={1}
+              placeholder="Lembrete importante..."
+              rows={2}
             />
-            <div className="flex items-center gap-3 mt-2">
-              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2">
-                <Calendar size={14} className="text-slate-500" />
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5">
+                <Calendar size={12} className="text-amber-500" />
                 <input 
                   type="date" 
-                  className="bg-transparent text-xs font-bold text-slate-300 focus:outline-none cursor-pointer"
+                  className="bg-transparent text-xs font-bold text-amber-700 focus:outline-none cursor-pointer"
                   value={block.metadata?.dueDate || ''}
                   onChange={(e) => onUpdate(block.id, { metadata: { ...block.metadata, dueDate: e.target.value } })}
                 />
@@ -298,35 +276,37 @@ const BlockRenderer: React.FC<{
   };
 
   return (
-    <div className="group/block relative flex items-start gap-6 p-6 hover:bg-slate-50/80 rounded-[2.5rem] transition-all border border-transparent hover:border-slate-100">
-      <div className="flex flex-col items-center gap-3 opacity-0 group-hover/block:opacity-100 transition-all pt-2 scale-90">
-        <div className="p-2.5 bg-white border border-slate-200 rounded-xl cursor-grab active:cursor-grabbing shadow-sm text-slate-400 hover:text-slate-900 hover:border-slate-400 transition-all">
-          <MoreVertical size={18} />
+    <div className="group relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300 flex flex-col h-full overflow-hidden">
+      {/* Card Header */}
+      <div className="flex items-center justify-between p-4 border-b border-slate-50 bg-slate-50/30">
+        <div className={`flex items-center gap-2 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${getTypeColor(block.type)}`}>
+           {getTypeIcon(block.type)}
+           {block.type}
         </div>
-        <button 
-          onClick={() => onDelete(block.id)}
-          className="p-2.5 hover:bg-red-50 hover:text-red-500 rounded-xl text-slate-300 transition-all shadow-sm border border-transparent hover:border-red-100"
-        >
-          <Trash2 size={18} />
-        </button>
+        
+        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[10px] text-slate-300 font-medium">
+             {format(new Date(block.createdAt), "d MMM", { locale: ptBR })}
+          </span>
+          <button 
+            onClick={() => onDelete(block.id)}
+            className="p-1.5 hover:bg-red-50 hover:text-red-500 rounded-lg text-slate-300 transition-all"
+            title="Excluir"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
       
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-4 mb-4 text-[10px] font-black uppercase tracking-widest">
-          <span className={`px-3 py-1 rounded-full ${
-             block.type === BlockType.IMAGE ? 'bg-blue-600 text-white' :
-             block.type === BlockType.VIDEO ? 'bg-indigo-600 text-white' :
-             block.type === BlockType.REMINDER ? 'bg-blue-900 text-white' :
-             block.type === BlockType.TODO ? 'bg-emerald-600 text-white' :
-             'bg-slate-200 text-slate-600'
-          }`}>{block.type}</span>
-          <span className="text-slate-300">{format(new Date(block.createdAt), "d 'de' MMM, HH:mm", { locale: ptBR })}</span>
-        </div>
+      {/* Card Body */}
+      <div className="p-4 flex-1">
         {renderContent()}
       </div>
     </div>
   );
 };
+
+import { UploadModal } from '../components/UploadModal';
 
 const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -338,6 +318,7 @@ const ProjectDetail: React.FC = () => {
   const [view, setView] = React.useState<'blocks' | 'timeline' | 'strategy'>('blocks');
   const [search, setSearch] = React.useState('');
   const [filterType, setFilterType] = React.useState<BlockType | 'ALL'>('ALL');
+  const [isUploadModalOpen, setIsUploadModalOpen] = React.useState(false);
 
   if (!project) return <div className="p-12 text-center font-bold text-slate-400">Repositório não encontrado</div>;
 
@@ -357,8 +338,34 @@ const ProjectDetail: React.FC = () => {
     });
   };
 
+  const handleUploadComplete = async (file: File, type: BlockType) => {
+    try {
+      const base64 = await fileToBase64(file);
+      addBlock(project.id, {
+        type,
+        content: '', // Can be empty initially
+        tags: [],
+        metadata: { 
+          url: base64, 
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size
+        }
+      });
+      addToast("Arquivo enviado com sucesso!", "success");
+    } catch (error) {
+      console.error(error);
+      addToast("Erro ao processar arquivo.", "error");
+    }
+  };
+
   return (
     <div className="min-h-full pb-40 bg-white">
+      <UploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+        onUpload={handleUploadComplete} 
+      />
       {/* Header Premium High-Tech */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-100 px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-6">
@@ -393,50 +400,11 @@ const ProjectDetail: React.FC = () => {
                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                  {project.blocks.length} módulos ativos
                </p>
-               
-               <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Fase do Projeto</span>
-                    <select 
-                      className="bg-transparent text-[11px] font-bold text-slate-900 focus:outline-none cursor-pointer uppercase tracking-wide"
-                      value={PROJECT_PHASES.find(p => p.value >= project.progress)?.value || 10}
-                      onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
-                    >
-                      {PROJECT_PHASES.map(phase => (
-                        <option key={phase.value} value={phase.value}>{phase.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="h-8 w-px bg-slate-200 mx-2"></div>
-
-                  <div className="flex flex-col gap-1 w-32">
-                     <div className="flex justify-between">
-                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Progresso</span>
-                       <span className="text-[9px] font-black text-blue-600">{project.progress}%</span>
-                     </div>
-                     <input 
-                       type="range" 
-                       min="0" 
-                       max="100" 
-                       step="5"
-                       value={project.progress} 
-                       onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
-                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                     />
-                  </div>
-               </div>
             </div>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => navigate('/chat', { state: { projectId: project.id } })}
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:shadow-lg hover:shadow-blue-500/20 hover:scale-105 transition-all mr-2"
-          >
-            <Sparkles size={16} /> Continuar com IA
-          </button>
           <div className="relative mr-2 hidden xl:block">
              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
              <input 
@@ -566,14 +534,16 @@ const ProjectDetail: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                filteredBlocks.map(block => (
-                  <BlockRenderer 
-                    key={block.id} 
-                    block={block} 
-                    onDelete={(bid) => deleteBlock(project.id, bid)}
-                    onUpdate={(bid, updates) => updateBlock(project.id, bid, updates)}
-                  />
-                ))
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredBlocks.map(block => (
+                    <BlockRenderer 
+                      key={block.id} 
+                      block={block} 
+                      onDelete={(bid) => deleteBlock(project.id, bid)}
+                      onUpdate={(bid, updates) => updateBlock(project.id, bid, updates)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>

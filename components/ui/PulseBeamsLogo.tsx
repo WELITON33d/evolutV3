@@ -174,20 +174,21 @@ export const PulseBeamsLogo = () => {
         <div className="relative flex justify-center w-[320px] text-center space-x-4 h-[120px] items-center z-10 rounded-full bg-zinc-950 py-0.5 px-4 ring-1 ring-white/10">
           
           {/* Icon */}
-          <div className="relative flex items-center justify-center text-white">
-            <div className="flex items-center gap-1 font-black tracking-tighter">
-               <ChevronLeft strokeWidth={4} size={32} />
-               <ChevronRight strokeWidth={4} size={32} />
-            </div>
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[40%]">
-              <MousePointer2 size={24} strokeWidth={0} fill="currentColor" className="transform rotate-[-15deg] translate-x-[2px] translate-y-[2px]" />
-              <MousePointer2 size={24} strokeWidth={2} className="absolute inset-0 transform rotate-[-15deg] translate-x-[2px] translate-y-[2px] text-white mix-blend-difference" />
-            </div>
+          <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-slate-800 overflow-hidden">
+             {/* Geometric "E" / Evolution Symbol */}
+             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                <path d="M4 4H20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M4 12H14" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M4 20H20" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                <path d="M17 12L21 16L17 20" stroke="currentColor" strokeWidth="0" fill="currentColor"/> 
+             </svg>
+             {/* Abstract Arrow integrated */}
+             <div className="absolute right-1.5 bottom-1.5 w-2.5 h-2.5 rounded-full bg-blue-500" />
           </div>
 
           {/* Text */}
-          <span className="md:text-4xl text-2xl font-black inline-block text-white tracking-wide uppercase">
-            EVOLUT
+          <span className="md:text-4xl text-2xl font-bold inline-block text-white tracking-tight">
+            Evolut
           </span>
 
         </div>

@@ -94,10 +94,14 @@ const BlockRenderer: React.FC<{
                  <img src={block.metadata.url} alt="Print de Referência" className="max-w-full h-auto object-contain" />
                  <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/img:opacity-100 transition-all translate-y-2 group-hover/img:translate-y-0">
                    <button 
-                    onClick={() => onUpdate(block.id, { metadata: { ...block.metadata, url: '' } })}
+                    onClick={() => {
+                      if(confirm("Deseja excluir este bloco?")) {
+                        onDelete(block.id);
+                      }
+                    }}
                     className="bg-white/95 p-2 rounded-xl hover:bg-white shadow-xl text-red-500 hover:scale-110 transition-all border border-slate-100"
                    >
-                     <X size={18} />
+                     <Trash2 size={18} />
                    </button>
                  </div>
                </div>
@@ -136,10 +140,14 @@ const BlockRenderer: React.FC<{
                 <video src={block.metadata.url} controls className="w-full h-full object-contain" />
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/vid:opacity-100 transition-all">
                    <button 
-                    onClick={() => onUpdate(block.id, { metadata: { ...block.metadata, url: '' } })}
+                    onClick={() => {
+                      if(confirm("Deseja excluir este bloco?")) {
+                        onDelete(block.id);
+                      }
+                    }}
                     className="bg-white/95 p-2 rounded-xl hover:bg-white shadow-xl text-red-500 hover:scale-110 transition-all"
                    >
-                     <X size={18} />
+                     <Trash2 size={18} />
                    </button>
                  </div>
               </div>
@@ -320,13 +328,16 @@ const ProjectDetail: React.FC = () => {
   const project = projects.find(p => p.id === id);
   const [view, setView] = React.useState<'blocks' | 'timeline' | 'strategy'>('blocks');
   const [search, setSearch] = React.useState('');
+  const [filterType, setFilterType] = React.useState<BlockType | 'ALL'>('ALL');
 
   if (!project) return <div className="p-12 text-center font-bold text-slate-400">Repositório não encontrado</div>;
 
-  const filteredBlocks = project.blocks.filter(b => 
-    b.content.toLowerCase().includes(search.toLowerCase()) || 
-    (b.metadata?.fileName?.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filteredBlocks = project.blocks.filter(b => {
+    const matchesSearch = b.content.toLowerCase().includes(search.toLowerCase()) || 
+                          (b.metadata?.fileName?.toLowerCase().includes(search.toLowerCase()));
+    const matchesFilter = filterType === 'ALL' || b.type === filterType;
+    return matchesSearch && matchesFilter;
+  });
 
   const handleAddBlock = (type: BlockType) => {
     addBlock(project.id, {
@@ -352,14 +363,40 @@ const ProjectDetail: React.FC = () => {
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">{project.name}</h1>
               <div className="h-6 w-px bg-slate-100"></div>
-              <span className="text-[10px] bg-slate-900 text-white px-4 py-1.5 rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-200">
-                {project.type}
-              </span>
+              <div className="flex items-center gap-2">
+                 <span className="text-[10px] bg-slate-900 text-white px-4 py-1.5 rounded-full font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-200">
+                  {project.type}
+                 </span>
+                 <select 
+                    value={project.status}
+                    onChange={(e) => updateProject(project.id, { status: e.target.value as any })}
+                    className="text-[10px] bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-full font-black uppercase tracking-[0.2em] focus:outline-none cursor-pointer hover:border-blue-400 transition-all"
+                 >
+                    <option value="Não Iniciado">Não Iniciado</option>
+                    <option value="Em Andamento">Em Andamento</option>
+                    <option value="Em Espera">Em Espera</option>
+                    <option value="Concluído">Concluído</option>
+                 </select>
+              </div>
             </div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-              {project.blocks.length} módulos ativos no repositório
-            </p>
+            <div className="flex items-center gap-6 mt-3">
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                 {project.blocks.length} módulos ativos
+               </p>
+               <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Progresso: {project.progress}%</span>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    step="5"
+                    value={project.progress} 
+                    onChange={(e) => updateProject(project.id, { progress: parseInt(e.target.value) })}
+                    className="w-24 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+               </div>
+            </div>
           </div>
         </div>
         
@@ -411,7 +448,47 @@ const ProjectDetail: React.FC = () => {
         </div>
 
         {view === 'blocks' && (
-          <div className="space-y-12">
+          <div className="space-y-8">
+            {/* Filters */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+              <button 
+                onClick={() => setFilterType('ALL')}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === 'ALL' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Todos
+              </button>
+              <button 
+                onClick={() => setFilterType(BlockType.TEXT)}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === BlockType.TEXT ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Texto
+              </button>
+              <button 
+                onClick={() => setFilterType(BlockType.IMAGE)}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === BlockType.IMAGE ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Prints
+              </button>
+              <button 
+                onClick={() => setFilterType(BlockType.VIDEO)}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === BlockType.VIDEO ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Vídeo
+              </button>
+              <button 
+                onClick={() => setFilterType(BlockType.LINK)}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === BlockType.LINK ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Links
+              </button>
+              <button 
+                onClick={() => setFilterType(BlockType.FILE)}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border ${filterType === BlockType.FILE ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+              >
+                Arquivos
+              </button>
+            </div>
+
             {/* Toolbar de Módulos (Estilo Command Center) */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                <button onClick={() => handleAddBlock(BlockType.TEXT)} className="flex flex-col items-center gap-3 p-6 bg-slate-50 rounded-[2rem] hover:bg-slate-950 hover:text-white transition-all group">

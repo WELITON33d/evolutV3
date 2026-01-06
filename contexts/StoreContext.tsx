@@ -26,6 +26,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const fetchProjects = async () => {
     if (!user) return;
+    
+    // In Mock Mode, we load from localStorage via useEffect, so skip API call
+    if (shouldMock) return;
+
     setLoading(true);
     try {
       // Fetch projects
@@ -80,6 +84,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setProjects([]);
     }
   }, [user]);
+
+  // Load from LocalStorage in Mock Mode
+  useEffect(() => {
+    if (shouldMock && user) {
+      const stored = localStorage.getItem(`mock_projects_${user.email}`);
+      if (stored) {
+        setProjects(JSON.parse(stored));
+      }
+    }
+  }, [user]);
+
+  // Save to LocalStorage in Mock Mode
+  useEffect(() => {
+    if (shouldMock && user && projects.length > 0) {
+      localStorage.setItem(`mock_projects_${user.email}`, JSON.stringify(projects));
+    }
+  }, [projects, user]);
 
   const addProject = async (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'blocks' | 'status' | 'progress'>) => {
     if (!user) return null;

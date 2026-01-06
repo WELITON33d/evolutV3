@@ -1,0 +1,8 @@
+projectType: frontend
+language: typescript
+framework: react
+buildTool: vite
+scripts:
+  dev: npm run dev
+  build: npm run build
+testDirectory: tests

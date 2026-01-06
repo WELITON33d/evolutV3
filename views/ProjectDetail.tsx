@@ -9,7 +9,7 @@ import {
   ArrowLeft, Plus, Type, Image as ImageIcon, Video as VideoIcon, Link as LinkIcon, 
   CheckSquare, Bell, MoreVertical, Trash2, Calendar, 
   History, Search, LayoutGrid, Info, Upload, Download, File as FileIcon, X, Play,
-  Target, Zap
+  Target, Zap, Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -431,6 +431,12 @@ const ProjectDetail: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/chat', { state: { projectId: project.id } })}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:shadow-lg hover:shadow-blue-500/20 hover:scale-105 transition-all mr-2"
+          >
+            <Sparkles size={16} /> Continuar com IA
+          </button>
           <div className="relative mr-2 hidden xl:block">
              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" />
              <input 

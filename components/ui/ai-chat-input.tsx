@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect, useRef } from "react";
-import { Lightbulb, Mic, Globe, Paperclip, Send } from "lucide-react";
+import { Mic, Paperclip, Send, Square } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 const PLACEHOLDERS = [
@@ -14,14 +14,55 @@ const PLACEHOLDERS = [
   "Resuma este artigo",
 ];
 
-const AIChatInput = () => {
+interface AIChatInputProps { 
+  onSend: (message: string, file?: { name: string, content: string }) => void;
+  loading?: boolean;
+  onStop?: () => void;
+  toolbar?: React.ReactNode;
+}
+
+const AIChatInput = ({ onSend, loading, onStop, toolbar }: AIChatInputProps) => {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [showPlaceholder, setShowPlaceholder] = useState(true);
   const [isActive, setIsActive] = useState(false);
-  const [thinkActive, setThinkActive] = useState(false);
-  const [deepSearchActive, setDeepSearchActive] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [selectedFile, setSelectedFile] = useState<{ name: string, content: string } | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Simple text read for code/logs
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      setSelectedFile({ name: file.name, content });
+      setIsActive(true); // Keep active to show file
+    };
+    reader.readAsText(file);
+  };
+
+  const handleSend = () => {
+    if (!inputValue.trim() && !selectedFile) return;
+    onSend(inputValue, selectedFile || undefined);
+    setInputValue("");
+    setSelectedFile(null);
+    setIsActive(false);
+  };
+
+  const handleStop = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onStop?.();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
   // Cycle placeholder text when input is inactive
   useEffect(() => {
@@ -103,7 +144,7 @@ const AIChatInput = () => {
   };
 
   return (
-    <div className="w-full min-h-[300px] flex justify-center items-center text-black">
+    <div className="w-full min-h-[150px] flex justify-center items-end pb-6 text-black">
       <motion.div
         ref={wrapperRef}
         className="w-full max-w-3xl"
@@ -114,28 +155,56 @@ const AIChatInput = () => {
         onClick={handleActivate}
       >
         <div className="flex flex-col items-stretch w-full h-full">
+          {/* Top Toolbar Area (Expanded Only) */}
+          <motion.div
+             className="px-4 pt-3 flex items-center justify-start overflow-hidden"
+             animate={{ 
+               height: isActive || inputValue ? "auto" : 0,
+               opacity: isActive || inputValue ? 1 : 0
+             }}
+             transition={{ duration: 0.2 }}
+          >
+             {toolbar}
+          </motion.div>
+
           {/* Input Row */}
-          <div className="flex items-center gap-2 p-3 rounded-full bg-white max-w-3xl w-full">
+          <div className="flex items-center gap-2 px-3 pb-3 pt-1 rounded-full bg-white max-w-3xl w-full flex-1">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              onChange={handleFileChange}
+              accept=".txt,.js,.ts,.tsx,.json,.log,.md,.css,.html"
+            />
             <button
-              className="p-3 rounded-full hover:bg-gray-100 transition"
+              className={`p-3 rounded-full hover:bg-gray-100 transition ${selectedFile ? 'text-blue-600 bg-blue-50' : ''}`}
               title="Anexar arquivo"
               type="button"
               tabIndex={-1}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading}
             >
               <Paperclip size={20} />
             </button>
 
             {/* Text Input & Placeholder */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 h-full flex items-center">
+              {selectedFile && (
+                <div className="absolute -top-10 left-0 text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-600 flex items-center gap-1 shadow-sm">
+                   <Paperclip size={10} /> {selectedFile.name}
+                </div>
+              )}
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="flex-1 border-0 outline-0 rounded-md py-2 text-base bg-transparent w-full font-normal focus:ring-0"
+                onKeyDown={handleKeyDown}
+                disabled={loading}
+                className="flex-1 border-0 outline-0 rounded-md py-2 text-base bg-transparent w-full font-normal focus:ring-0 h-full"
                 style={{ position: "relative", zIndex: 1 }}
                 onFocus={handleActivate}
               />
-              <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-3 py-2">
+              <div className="absolute left-0 top-0 w-full h-full pointer-events-none flex items-center px-3">
                 <AnimatePresence mode="wait">
                   {showPlaceholder && !isActive && !inputValue && (
                     <motion.span
@@ -174,96 +243,33 @@ const AIChatInput = () => {
               title="Entrada de voz"
               type="button"
               tabIndex={-1}
+              disabled={loading}
             >
               <Mic size={20} />
             </button>
-            <button
-              className="flex items-center gap-1 bg-black hover:bg-zinc-700 text-white p-3 rounded-full font-medium justify-center"
-              title="Enviar"
-              type="button"
-              tabIndex={-1}
-            >
-              <Send size={18} />
-            </button>
-          </div>
-
-          {/* Expanded Controls */}
-          <motion.div
-            className="w-full flex justify-start px-4 items-center text-sm"
-            variants={{
-              hidden: {
-                opacity: 0,
-                y: 20,
-                pointerEvents: "none" as const,
-                transition: { duration: 0.25 },
-              },
-              visible: {
-                opacity: 1,
-                y: 0,
-                pointerEvents: "auto" as const,
-                transition: { duration: 0.35, delay: 0.08 },
-              },
-            }}
-            initial="hidden"
-            animate={isActive || inputValue ? "visible" : "hidden"}
-            style={{ marginTop: 8 }}
-          >
-            <div className="flex gap-3 items-center">
-              {/* Think Toggle */}
+            
+            {loading ? (
               <button
-                className={`flex items-center gap-1 px-4 py-2 rounded-full transition-all font-medium group ${
-                  thinkActive
-                    ? "bg-blue-600/10 outline outline-blue-600/60 text-blue-950"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                title="Pensar"
+                className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white p-3 rounded-full font-medium justify-center transition-all animate-pulse"
+                title="Interromper"
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setThinkActive((a) => !a);
-                }}
+                tabIndex={-1}
+                onClick={handleStop}
               >
-                <Lightbulb
-                  className="group-hover:fill-yellow-300 transition-all"
-                  size={18}
-                />
-                Pensar
+                <Square size={18} fill="currentColor" />
               </button>
-
-              {/* Deep Search Toggle */}
-              <motion.button
-                className={`flex items-center px-4 gap-1 py-2 rounded-full transition font-medium whitespace-nowrap overflow-hidden justify-start  ${
-                  deepSearchActive
-                    ? "bg-blue-600/10 outline outline-blue-600/60 text-blue-950"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                title="Pesquisa Profunda"
+            ) : (
+              <button
+                className="flex items-center gap-1 bg-black hover:bg-zinc-700 text-white p-3 rounded-full font-medium justify-center transition-all"
+                title="Enviar"
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeepSearchActive((a) => !a);
-                }}
-                initial={false}
-                animate={{
-                  width: deepSearchActive ? 160 : 36, // Adjusted width for PT-BR text length
-                  paddingLeft: deepSearchActive ? 8 : 9,
-                }}
+                tabIndex={-1}
+                onClick={handleSend}
               >
-                <div className="flex-1">
-                  <Globe size={18} />
-                </div>
-                <motion.span
-                className="pb-[2px]"
-                  initial={false}
-                  animate={{
-                    opacity: deepSearchActive ? 1 : 0,
-                  }}
-                >
-                  Pesquisa Profunda
-                </motion.span>
-              </motion.button>
-            </div>
-          </motion.div>
+                <Send size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>

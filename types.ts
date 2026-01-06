@@ -94,3 +94,12 @@ export interface Reminder {
   date: string;
   completed: boolean;
 }
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: any[]; // Using any[] to avoid circular dependency with ChatMessage type which is in lib/openai.ts. Ideally, move types to a shared file.
+  projectId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
